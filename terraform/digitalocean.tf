@@ -103,7 +103,7 @@ resource "digitalocean_droplet" "www" {
 }
 
 resource "digitalocean_droplet" "app-django" {
-  count    = 9
+  count    = 0
   image    = var.droplet_os
   name     = "app-django${count.index + 1}"
   region   = var.droplet_region
@@ -121,7 +121,7 @@ resource "digitalocean_droplet" "app-django" {
 }
 
 resource "digitalocean_droplet" "app-counts" {
-  count    = 2
+  count    = 0
   image    = var.droplet_os
   name     = "app-counts${count.index + 1}"
   region   = var.droplet_region
@@ -139,7 +139,7 @@ resource "digitalocean_droplet" "app-counts" {
 }
 
 resource "digitalocean_droplet" "app-push" {
-  count    = 2
+  count    = 0
   image    = var.droplet_os
   name     = "app-push${count.index + 1}"
   region   = var.droplet_region
@@ -157,7 +157,7 @@ resource "digitalocean_droplet" "app-push" {
 }
 
 resource "digitalocean_droplet" "app-refresh" {
-  count    = 8
+  count    = 0
   image    = var.droplet_os
   name     = "app-refresh${count.index + 1}"
   region   = var.droplet_region
@@ -177,6 +177,7 @@ resource "digitalocean_droplet" "app-refresh" {
 resource "digitalocean_droplet" "blog" {
   image    = var.droplet_os
   name     = "blog"
+  count    = 0
   region   = var.droplet_region
   size     = var.droplet_size
   ssh_keys = [digitalocean_ssh_key.default.fingerprint]
@@ -228,7 +229,7 @@ resource "digitalocean_droplet" "discovery" {
 }
 
 resource "digitalocean_droplet" "node-text" {
-  count    = 4
+  count    = 0
   image    = var.droplet_os
   name     = contains([0], count.index) ? "node-text" : "node-text${count.index + 1}"
   region   = var.droplet_region
@@ -246,7 +247,7 @@ resource "digitalocean_droplet" "node-text" {
 }
 
 resource "digitalocean_droplet" "node-socket" {
-  count    = 2
+  count    = 0
   image    = var.droplet_os
   name     = "node-socket${count.index + 1}"
   region   = var.droplet_region
@@ -264,7 +265,7 @@ resource "digitalocean_droplet" "node-socket" {
 }
 
 resource "digitalocean_droplet" "node-favicons" {
-  count    = 2
+  count    = 0
   image    = var.droplet_os
   name     = "node-favicons${count.index + 1}"
   region   = var.droplet_region
@@ -282,7 +283,7 @@ resource "digitalocean_droplet" "node-favicons" {
 }
 
 resource "digitalocean_droplet" "node-images" {
-  count    = 2
+  count    = 0
   image    = var.droplet_os
   name     = "node-images${count.index + 1}"
   region   = var.droplet_region
@@ -310,6 +311,7 @@ resource "digitalocean_volume" "node_page_volume" {
 }
 
 resource "digitalocean_droplet" "node-page" {
+  count    = 0
   image    = var.droplet_os
   name     = "node-page"
   region   = var.droplet_region
@@ -329,10 +331,10 @@ resource "digitalocean_droplet" "node-page" {
 }
 
 resource "digitalocean_droplet" "db-elasticsearch" {
-  count    = 1
-  image    = var.droplet_os
+  count = 1
+  image = var.droplet_os
   # name     = "db-elasticsearch"
-  name     = "db-elasticsearch${count.index+1}"
+  name     = "db-elasticsearch${count.index + 1}"
   region   = var.droplet_region
   size     = var.elasticsearch_droplet_size
   ssh_keys = [digitalocean_ssh_key.default.fingerprint]
@@ -384,7 +386,7 @@ resource "digitalocean_droplet" "db-redis-sessions" {
 resource "digitalocean_droplet" "db-redis-story" {
   count  = 1
   image  = var.droplet_os
-  name   = "db-redis-story${count.index + 2}"
+  name   = "db-redis-story${count.index + 1}"
   region = var.droplet_region
   # size   = contains([1], count.index) ? "m-8vcpu-64gb" : var.redis_story_droplet_size
   size     = var.redis_story_droplet_size
@@ -419,11 +421,11 @@ resource "digitalocean_droplet" "db-redis-pubsub" {
 }
 
 resource "digitalocean_droplet" "db-postgres" {
-  count  = 1
+  count   = 1
   backups = true
-  image  = var.droplet_os
-  name   = contains([0], count.index) ? "db-postgres${count.index + 2}" : "db-postgres${count.index + 2}"
-  region = var.droplet_region
+  image   = var.droplet_os
+  name    = contains([0], count.index) ? "db-postgres${count.index + 2}" : "db-postgres${count.index + 2}"
+  region  = var.droplet_region
   # size   = contains([0], count.index) ? var.droplet_size_160 : var.droplet_size_320
   size     = var.droplet_size_320
   ssh_keys = [digitalocean_ssh_key.default.fingerprint]
@@ -596,7 +598,7 @@ resource "digitalocean_droplet" "db-sentry" {
 
 # apd -l "task-celery4*" --tags stop; servers=$(for i in {39..48}; do echo -n "-target=\"digitalocean_droplet.task-celery[$i]\" " ; done); tf apply -refresh=false `eval echo $servers`
 resource "digitalocean_droplet" "task-celery" {
-  count    = 79
+  count    = 0
   image    = var.droplet_os
   name     = format("task-celery%02v", count.index + 1)
   region   = var.droplet_region
@@ -615,7 +617,7 @@ resource "digitalocean_droplet" "task-celery" {
 }
 
 resource "digitalocean_droplet" "task-work" {
-  count    = 3
+  count    = 0
   image    = var.droplet_os
   name     = "task-work${count.index + 1}"
   region   = var.droplet_region

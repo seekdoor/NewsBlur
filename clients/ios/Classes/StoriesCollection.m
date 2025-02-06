@@ -97,6 +97,26 @@
     self.savedSearchQuery = fromCollection.savedSearchQuery;
 }
 
+- (BOOL)isEverything {
+    return [activeFolder isEqualToString:@"everything"];
+}
+
+- (BOOL)isInfrequent {
+    return [activeFolder isEqualToString:@"infrequent"];
+}
+
+- (BOOL)isRiverOrSocial {
+    return self.isRiverView || self.isSavedView || self.isReadView || self.isWidgetView || self.isSocialView || self.isSocialRiverView;
+}
+
+- (BOOL)isCustomFolder {
+    return self.isRiverView && !self.isEverything && !self.isInfrequent && !self.isSavedView && !self.isReadView && !self.isSocialView && !self.isWidgetView;
+}
+
+- (BOOL)isCustomFolderOrFeed {
+    return !self.isRiverView || self.isCustomFolder;
+}
+
 #pragma mark - Story Traversal
 
 - (BOOL)isStoryUnread:(NSDictionary *)story {
@@ -228,6 +248,10 @@
     return [[activeFeedStoryLocations objectAtIndex:location] intValue];
 }
 
+- (NSString *)activeFeedIdStr {
+    return [NSString stringWithFormat:@"%@", [activeFeed objectForKey:@"id"]];
+}
+
 - (NSString *)activeOrder {
     NSUserDefaults *userPreferences = [NSUserDefaults standardUserDefaults];
     NSString *orderPrefDefault = [userPreferences stringForKey:@"default_order"];
@@ -266,6 +290,20 @@
         } else {
             return @"all";
         }
+    }
+}
+
+- (NSString *)activeStoryTitlesPosition {
+    NSUserDefaults *userPreferences = [NSUserDefaults standardUserDefaults];
+    NSString *positionPrefDefault = [userPreferences stringForKey:@"story_titles_position"];
+    NSString *positionPref = [userPreferences stringForKey:[self storyTitlesPositionKey]];
+    
+    if (positionPref) {
+        return positionPref;
+    } else if (positionPrefDefault) {
+        return positionPrefDefault;
+    } else {
+        return @"titles_on_left";
     }
 }
 
@@ -309,6 +347,14 @@
     }
 }
 
+- (NSString *)storyTitlesPositionKey {
+    if (self.isRiverView) {
+        return [NSString stringWithFormat:@"folder:%@:story_titles_position", self.activeFolder];
+    } else {
+        return [NSString stringWithFormat:@"%@:story_titles_position", [self.activeFeed objectForKey:@"id"]];
+    }
+}
+
 - (NSString *)storyViewKey {
     if (self.isRiverView) {
         return [NSString stringWithFormat:@"folder:%@:story_view", self.activeFolder];
@@ -348,6 +394,10 @@
 #pragma mark - Story Management
 
 - (void)addStories:(NSArray *)stories {
+    if (self.activeFeedStories == nil) {
+        NSLog(@"addStories: activeFeedStories was nil!");
+        self.activeFeedStories = [NSMutableArray array];
+    }
     self.activeFeedStories = [self.activeFeedStories arrayByAddingObjectsFromArray:stories];
     self.storyCount = (int)[self.activeFeedStories count];
     [self calculateStoryLocations];
@@ -398,6 +448,10 @@
     NSString *hash = story[@"story_hash"];
     NSString *title = story[@"story_title"];
     
+    if (!hash) {
+        NSLog(@"🔧 trying to sync as read with no hash: %@: %@", hash, title);  // log
+        return;
+    }
     if (self.recentlyReadHashes[hash]) {
         NSLog(@"🔧 trying to sync as read when already read: %@: %@", hash, title);  // log
         return;
@@ -784,6 +838,10 @@
     NSMutableArray *tags = [NSMutableArray array];
     for (NSString *userTag in [story objectForKey:@"user_tags"]) {
         [tags addObject:userTag];
+    }
+    
+    if (storyHash == nil || storyFeedId == nil || tags == nil) {
+        return;
     }
     
     [params setObject:storyHash forKey:@"story_id"];

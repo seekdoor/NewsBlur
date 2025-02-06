@@ -31,6 +31,7 @@ coffee:
 migrations:
 	docker exec -it newsblur_web ./manage.py makemigrations
 makemigration: migrations
+makemigrations: migrations
 datamigration: 
 	docker exec -it newsblur_web ./manage.py makemigrations --empty $(app)
 migration: migrations
@@ -45,7 +46,8 @@ debug:
 	docker attach ${newsblur}
 log:
 	RUNWITHMAKEBUILD=True docker compose logs -f --tail 20 newsblur_web newsblur_node
-logweb: log
+logweb:
+	RUNWITHMAKEBUILD=True docker compose logs -f --tail 20 newsblur_web newsblur_node task_celery
 logcelery:
 	RUNWITHMAKEBUILD=True docker compose logs -f --tail 20 task_celery
 logtask: logcelery
@@ -66,10 +68,17 @@ down:
 	RUNWITHMAKEBUILD=True docker compose -f docker-compose.yml -f docker-compose.metrics.yml down
 nbdown: down
 jekyll:
-	cd blog && bundle exec jekyll serve
+	cd blog && JEKYLL_ENV=production bundle exec jekyll serve --config _config.yml
 jekyll_drafts:
-	cd blog && bundle exec jekyll serve --drafts
+	cd blog && JEKYLL_ENV=production bundle exec jekyll serve --drafts --config _config.yml
+lint:
+	docker exec -it newsblur_web isort --profile black .
+	docker exec -it newsblur_web black --line-length 110 .
+	docker exec -it newsblur_web flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude=venv
 
+jekyll_build:
+	cd blog && JEKYLL_ENV=production bundle exec jekyll build
+	
 # runs tests
 test:
 	RUNWITHMAKEBUILD=True CURRENT_UID=${CURRENT_UID} CURRENT_GID=${CURRENT_GID} TEST=True docker compose -f docker-compose.yml up -d newsblur_web
@@ -115,7 +124,8 @@ inventory:
 	./ansible/utils/generate_inventory.py
 oldinventory:
 	OLD=1 ./ansible/utils/generate_inventory.py
-
+hinventory:
+	./ansible/utils/generate_hetzner_inventory.py
 # Docker
 pull:
 	docker pull newsblur/newsblur_python3
@@ -173,6 +183,9 @@ monitor: deploy_monitor
 deploy_staging:
 	ansible-playbook ansible/deploy.yml -l staging
 staging: deploy_staging
+deploy_staging_static: staging_static
+staging_static:
+	ansible-playbook ansible/deploy.yml -l staging --tags static
 celery_stop:
 	ansible-playbook ansible/deploy.yml -l task --tags stop
 sentry:
@@ -184,7 +197,7 @@ maintenance_off:
 
 # Provision
 firewall:
-	ansible-playbook ansible/all.yml -l db --tags firewall
+	ansible-playbook ansible/all.yml -l db --tags ufw
 oldfirewall:
 	ANSIBLE_CONFIG=/srv/newsblur/ansible.old.cfg ansible-playbook ansible/all.yml  -l db --tags firewall
 repairmongo:
@@ -197,6 +210,11 @@ mongodump:
 mongorestore:
 	cp -fr docker/volumes/mongodump docker/volumes/db_mongo/
 	docker exec -it db_mongo mongorestore --port 29019 -d newsblur /data/db/mongodump/newsblur
+pgrestore:
+	docker exec -it db_postgres bash -c "psql -U newsblur -c 'CREATE DATABASE newsblur_prod;'; pg_restore -U newsblur --role=newsblur --dbname=newsblur_prod /var/lib/postgresql/data/backup_postgresql_2023-10-10-04-00.sql.sql"
+redisrestore:
+	docker exec -it db_redis bash -c "redis-cli -p 6579 --pipe < /data/backup_db_redis_user_2023-10-21-04-00.rdb.gz"
+	docker exec -it db_redis bash -c "redis-cli -p 6579 --pipe < /data/backup_db_redis_story2_2023-10-21-04-00.rdb.gz"
 index_feeds:
 	docker exec -it newsblur_web ./manage.py index_feeds
 index_stories:
